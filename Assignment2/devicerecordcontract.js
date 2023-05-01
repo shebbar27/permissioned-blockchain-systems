@@ -51,7 +51,7 @@ class DeviceRecordContract extends Contract {
     //  Read more about unknownTransaction here: https://hyperledger.github.io/fabric-chaincode-node/master/api/fabric-contract-api.Contract.html
     async unknownTransaction(ctx) {
         // GRADED FUNCTION
-        throw new Error()
+        throw new Error("Function Name Missing")
     }
 
     async afterTransaction(ctx, result) {
@@ -78,7 +78,8 @@ class DeviceRecordContract extends Contract {
         let drecord = DeviceRecord.createInstance(device_serial, price, manufacturing_date, company, device_type);
         //TASK 0
         // Add device record by calling the method addDRecord in the deviceRecordList
-        throw new Error()
+        //throw new Error()
+        await ctx.deviceRecordList.addDRecord(drecord);
         return drecord.toBuffer();
     }
 
@@ -86,6 +87,7 @@ class DeviceRecordContract extends Contract {
         let drecordKey = DeviceRecord.makeKey([device_serial, price]);
         //TASK-1: Use a method from deviceRecordList to read a record by key 
         // Also complete Task0 before proceeding for Task-1 to work
+        let drecord = await ctx.deviceRecordList.getDRecord(drecordKey);
         return JSON.stringify(drecord)
     }
 
@@ -96,13 +98,16 @@ class DeviceRecordContract extends Contract {
      * @param {String} price price
      * @param {String} last_update date string 
      */
-    /*async updateLastUpdate(ctx, device_serial, price, last_update) {
+    async updateLastUpdate(ctx, device_serial, price, last_update) {
         let drecordKey = DeviceRecord.makeKey([device_serial, price]);
         //TASK-3: Use a method from deviceRecordList to read a record by key
         //Use setLastUpdate from DeviceRecord to update the last_update field
         //Use updateDRecord from deviceRecordList to update the record on the ledger
+        let drecord = await ctx.deviceRecordList.getDRecord(drecordKey);
+        drecord.setlastUpdate(last_update);
+        await ctx.deviceRecordList.updateDRecord(drecord);
         return drecord.toBuffer();
-    }*/
+    }
 
 
 
@@ -158,11 +163,19 @@ class DeviceRecordContract extends Contract {
      * @param {Context} ctx the transaction context
      * @param {String} company company to be queried
     */
-    /*async queryByCompany(ctx, company) {
+    async queryByCompany(ctx, company) {
         //      TASK-4: Complete the query String JSON object to query using the companyIndex (META-INF folder)
         //      Construct the JSON couch DB selector queryString that uses companyIndex
         //      Pass the Query string built to queryWithQueryString
-    }*/
+        let queryString = {
+            "selector": {
+                "company": company
+            },
+            "use_index": ["_design/companyIndexDoc", "companyIndex"]
+        };
+        let res = await this.queryWithQueryString(ctx, JSON.stringify(queryString));
+        return res;
+    }
 
     /**
      * Query by Device_Type
@@ -170,12 +183,20 @@ class DeviceRecordContract extends Contract {
      * @param {Context} ctx the transaction context
      * @param {String} device_type device_type to queried
     */
-    /*async queryByDevice_Type(ctx, device_type) {
+    async queryByDevice_Type(ctx, device_type) {
         //      TASK-5: Write a new index for device_type and write a CouchDB selector query that uses it
         //      to query by device_type
         //      Construct the JSON couch DB selector queryString that uses device_typeIndex
         //      Pass the Query string built to queryWithQueryString
-    }*/
+        let queryString = {
+            "selector": {
+                "device_type": device_type
+            },
+            "use_index": ["_design/device_typeIndexDoc", "device_typeIndex"]
+        };
+        let res = await this.queryWithQueryString(ctx, JSON.stringify(queryString));
+        return res;
+    }
 
     /**
      * Query by Device_Type Dual Query
@@ -183,12 +204,26 @@ class DeviceRecordContract extends Contract {
      * @param {Context} ctx the transaction context
      * @param {String} device_type device_type to queried
     */
-    /*async queryByDevice_Type_Dual(ctx, device_type1, device_type2) {
+    async queryByDevice_Type_Dual(ctx, device_type1, device_type2) {
         //      TASK-6: Write a CouchDB selector query that queries using two device types
         //      and uses the index created for device type
         //      Construct the JSON couch DB selector queryString that uses two device type indexe
         //      Pass the Query string built to queryWithQueryString
-    }*/
+        let queryString = {
+            "selector": {
+                "device_type": {
+                    "$in": [
+                        device_type1,
+                        device_type2
+                    ]
+                }
+            },
+            "use_index": ["_design/device_typeIndexDoc", "device_typeIndex"]
+        };
+
+        let res = await this.queryWithQueryString(ctx, JSON.stringify(queryString));
+        return res;
+    }
 
 }
 
